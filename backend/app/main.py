@@ -1,0 +1,1 @@
+print("Connect Four project started.")
