@@ -1,4 +1,4 @@
-
+# contains the GameState class representing the state of a Connect 4 game
 from backend.app.models.move_result import MoveResult
 
 
@@ -9,7 +9,7 @@ RED = 1
 YELLOW = 2
 
 class GameState:
-    def __init__(self) -> None:
+    def __init__(self, starting_player: int = RED) -> None:
         self.board = [
             [EMPTY for _ in range(COLUMNS)]
             for _ in range(ROWS)
@@ -17,8 +17,8 @@ class GameState:
 
         self.status = "active" # can be "active", "win", or "draw"
         self.winner = None # can be RED, YELLOW, or None depending on the game outcome
-        self.current_player = RED  # or YELLOW, depending on who starts
-
+        self.current_player = starting_player  # or YELLOW, depending on who starts
+        self.starting_player = starting_player
 
     # Drop a piece into a column for the current player
     def drop_piece(self, column: int) -> MoveResult:
@@ -99,8 +99,7 @@ class GameState:
         return result
     
     
-    from copy import deepcopy
- # Check if a column index is valid (within bounds and not full)
+    # Check if a column index is valid (within bounds and not full)
     def is_valid_column_index(self, column: int) -> bool:
         if 0 <= column < COLUMNS:
             return True
@@ -150,11 +149,5 @@ class GameState:
 
     #Helper to check if the game is a draw (no more valid moves)
     def check_draw(self) -> bool:
-        for col in range(COLUMNS):
-            if not self.is_column_full(col):
-                return False
-        self.status = "draw"
-        self.winner = None
-        return True
-
+        return all(self.is_column_full(col) for col in range(COLUMNS))
     
