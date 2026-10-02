@@ -1,4 +1,3 @@
-from re import search
 
 from backend.app.models.move_result import MoveResult
 
