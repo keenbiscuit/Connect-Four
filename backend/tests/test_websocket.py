@@ -7,6 +7,7 @@ from backend.app.services.game_manager import GameManager
 
 def make_test_client():
     main.game_manager = GameManager()
+    main.active_connections = {}  # Reset active connections for each test
     return TestClient(main.app)
 
 
@@ -29,3 +30,7 @@ def test_websocket_connection():
         assert data["status"] == "active"
         assert data["current_player"] == RED
         assert data["winner"] is None
+        assert game_id in main.active_connections
+        assert len(main.active_connections[game_id]) == 1
+
+    assert game_id not in main.active_connections

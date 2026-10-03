@@ -11,6 +11,9 @@ app = FastAPI()
 # create an instance of the GameManager
 game_manager = GameManager()
 
+# create map to store active websocket connections for each game
+active_connections: dict[str, set[WebSocket]] = {}
+
 
 # define health check endpoint
 @app.get("/health")
@@ -116,6 +119,13 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
 
     # accept the websocket connection and send the initial game state
     await websocket.accept()
+
+    # register the websocket connection for the game
+    if game_id not in active_connections:
+        active_connections[game_id] = set()
+    active_connections[game_id].add(websocket)
+
+    # send the initial game state to the connected client
     await websocket.send_json(
         {
             "type": "game_state",
@@ -133,3 +143,11 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
     except WebSocketDisconnect:
         # Will change to logging in the future
         print("Client disconnected")
+    # remove the websocket connection from the active connections set when the client disconnects
+    finally:
+        connections = active_connections.get(game_id, set())
+        if connections is not None:
+            connections.discard(websocket)
+        # If there are no more connections for the game, remove the game_id from active_connections
+        if not connections:
+            active_connections.pop(game_id, None)

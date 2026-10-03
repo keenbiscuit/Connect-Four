@@ -111,17 +111,13 @@ class GameState:
 
     # Check if a column index is valid (within bounds and not full)
     def is_valid_column_index(self, column: int) -> bool:
-        if 0 <= column < COLUMNS:
-            return True
-        return False
+        return 0 <= column < COLUMNS
 
     # Check if a column is full
     def is_column_full(self, column: int) -> bool:
         # A column is full if the topmost row is not empty
 
-        if self.board[ROWS - 1][column] == EMPTY:
-            return False
-        return True
+        return self.board[ROWS - 1][column] != EMPTY
 
     # Helper to find open row for a column
     def find_open_row(self, column: int) -> int | None:
