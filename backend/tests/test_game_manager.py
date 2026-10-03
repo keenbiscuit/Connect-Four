@@ -3,7 +3,6 @@ from backend.app.game_state import EMPTY, RED, ROWS, COLUMNS
 import uuid
 
 
-
 def test_create_and_get_game():
     # Test creating a new game and retrieving it by ID
     game_manager = GameManager()
@@ -12,6 +11,7 @@ def test_create_and_get_game():
     assert retrieved_game is not None
     assert retrieved_game == game
 
+
 # Test that a newly retrieved game has an empty board and active status
 def test_new_game_has_empty_board_and_active_status():
     game_manager = GameManager()
@@ -19,19 +19,24 @@ def test_new_game_has_empty_board_and_active_status():
     assert game.board == [[EMPTY for _ in range(COLUMNS)] for _ in range(ROWS)]
     assert game.status == "active"
 
+
 # Test that an unknown ID returns none
 def test_unknown_game_id_returns_none():
     game_manager = GameManager()
     assert game_manager.get_game("non_existent_id") is None
-    
+
     # Test that the game_id is a valid UUID string and has the correct format
+
+
 def test_game_id_is_valid_uuid():
     game_manager = GameManager()
     game_id, _ = game_manager.create_game()
     assert isinstance(game_id, str)
     assert uuid.UUID(game_id).version == 4  # The UUID should be version 4
-    assert uuid.UUID(game_id).hex == game_id.replace("-", "")  # The hexadecimal representation should match the UUID without hyphens
-    
+    assert uuid.UUID(game_id).hex == game_id.replace(
+        "-", ""
+    )  # The hexadecimal representation should match the UUID without hyphens
+
 
 # Test that two created games have different IDs and independent states
 def test_two_created_games_have_different_ids_and_independent_states():

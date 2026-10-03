@@ -27,6 +27,7 @@ def test_column_full() -> None:
     for col in range(1, COLUMNS):
         assert not game.is_column_full(col)
 
+
 def test_find_open_row() -> None:
     game = GameState()
 
@@ -46,6 +47,7 @@ def test_find_open_row() -> None:
     # Check that other columns still return 0 as the open row
     for col in range(2, COLUMNS):
         assert game.find_open_row(col) == 0
+
 
 def test_is_valid_column_index() -> None:
     game = GameState()
@@ -69,6 +71,7 @@ def test_is_valid_column_index() -> None:
     assert not game.is_valid_column_index(COLUMNS)
     assert not game.is_valid_column_index(COLUMNS + 1)
     assert not game.is_valid_column_index(-COLUMNS)
+
 
 def test_drop_piece_rejects_invalid_or_full_moves_without_mutation() -> None:
     game = GameState()
@@ -95,7 +98,7 @@ def test_drop_piece_rejects_invalid_or_full_moves_without_mutation() -> None:
     board_before = [row[:] for row in game.board]
 
     player_before = game.current_player
-    
+
     result = game.drop_piece(0)
     assert not result.success
     assert result.reason == "column_full"
@@ -116,31 +119,33 @@ def test_drop_piece_rejects_invalid_or_full_moves_without_mutation() -> None:
     # The board should remain unchanged for the rejected moves
     assert game.board == board_before
 
+
 def test_drop_piece_stacks_pieces_and_switches_turns():
-        game = GameState()
-        # Drop a piece into an empty column
-        result = game.drop_piece(0)
-        assert result.success
-        assert result.row == 0
-        assert game.current_player == YELLOW
+    game = GameState()
+    # Drop a piece into an empty column
+    result = game.drop_piece(0)
+    assert result.success
+    assert result.row == 0
+    assert game.current_player == YELLOW
 
-        # Drop another piece into the same column
-        result = game.drop_piece(0)
-        assert result.success
-        assert result.row == 1
-        assert game.current_player == RED
+    # Drop another piece into the same column
+    result = game.drop_piece(0)
+    assert result.success
+    assert result.row == 1
+    assert game.current_player == RED
 
-        # Drop a third piece into the same column
-        result = game.drop_piece(0)
-        assert result.success
-        assert result.row == 2
-        assert game.current_player == YELLOW
+    # Drop a third piece into the same column
+    result = game.drop_piece(0)
+    assert result.success
+    assert result.row == 2
+    assert game.current_player == YELLOW
 
-        # Drop a fourth piece into the same column
-        result = game.drop_piece(0)
-        assert result.success
-        assert result.row == 3
-        assert game.current_player == RED
+    # Drop a fourth piece into the same column
+    result = game.drop_piece(0)
+    assert result.success
+    assert result.row == 3
+    assert game.current_player == RED
+
 
 def test_drop_piece_detects_winning_move():
     game = GameState()
@@ -158,6 +163,7 @@ def test_drop_piece_detects_winning_move():
     assert game.status == "win"
     assert game.winner == RED
 
+
 def test_drop_piece_detects_horizontal_win():
     game = GameState()
     # Set up a horizontal winning condition for RED
@@ -173,6 +179,7 @@ def test_drop_piece_detects_horizontal_win():
     assert result.winner == RED
     assert game.status == "win"
     assert game.winner == RED
+
 
 def test_drop_piece_detects_vertical_win():
     game = GameState()
@@ -190,6 +197,7 @@ def test_drop_piece_detects_vertical_win():
     assert game.status == "win"
     assert game.winner == RED
 
+
 def test_drop_piece_detects_diagonal_win():
     game = GameState()
     # Set up a diagonal winning condition for RED
@@ -199,7 +207,6 @@ def test_drop_piece_detects_diagonal_win():
     game.board[0][3] = YELLOW
     game.board[1][3] = YELLOW
     game.board[2][3] = YELLOW
-
 
     # Drop the winning piece
     result = game.drop_piece(3)
@@ -211,6 +218,7 @@ def test_drop_piece_detects_diagonal_win():
     assert game.status == "win"
     assert game.winner == RED
 
+
 def test_drop_piece_detects_anti_diagonal_win():
     game = GameState()
     # Set up an anti-diagonal winning condition for RED
@@ -220,7 +228,6 @@ def test_drop_piece_detects_anti_diagonal_win():
     game.board[0][0] = YELLOW
     game.board[1][0] = YELLOW
     game.board[2][0] = YELLOW
-
 
     # Drop the winning piece
     result = game.drop_piece(0)

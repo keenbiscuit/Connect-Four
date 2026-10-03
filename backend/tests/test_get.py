@@ -1,12 +1,15 @@
 from fastapi.testclient import TestClient
+
 from backend.app import main
 from backend.app.game_state import RED, YELLOW
 from backend.app.services.game_manager import GameManager
+
 
 def make_client() -> TestClient:
     # create a new game manager instance for every test
     main.game_manager = GameManager()
     return TestClient(main.app)
+
 
 # Test for retrieving a game by its ID
 def test_get_game_by_id():
@@ -34,6 +37,7 @@ def test_get_game_by_id():
     assert data["status"] == move_data["status"]
     assert data["current_player"] == move_data["current_player"]
     assert data["winner"] == move_data["winner"]
+
 
 def test_get_nonexistent_game():
     client = make_client()

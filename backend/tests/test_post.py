@@ -1,9 +1,11 @@
 # Tests for the Connect-4 FastAPI POST endpoints
 
 from fastapi.testclient import TestClient
+
 from backend.app import main
-from backend.app.services.game_manager import GameManager
 from backend.app.game_state import RED, YELLOW
+from backend.app.services.game_manager import GameManager
+
 
 # Helper function to create a test client with a fresh game manager
 def make_client() -> TestClient:
@@ -25,21 +27,22 @@ def test_create_game():
     assert isinstance(data["game_id"], str)
     assert isinstance(data["board"], list)
     assert all(isinstance(row, list) for row in data["board"])
-    #assert all rows have length 7
+    # assert all rows have length 7
     assert all(len(row) == 7 for row in data["board"])
-    #assert the board has 6 rows
+    # assert the board has 6 rows
     assert len(data["board"]) == 6
 
-    #assert the status is active
+    # assert the status is active
     assert data["status"] == "active"
 
-    #assert the current player is either "RED" or "YELLOW"
+    # assert the current player is either "RED" or "YELLOW"
     assert data["current_player"] == RED
 
-    #assert the winner is either None since game is fresh
+    # assert the winner is either None since game is fresh
     assert data["winner"] is None
 
-#Test new game alternates player
+
+# Test new game alternates player
 def test_create_game_alternates_player():
     client = make_client()
 
@@ -57,6 +60,7 @@ def test_create_game_alternates_player():
     assert first.json()["current_player"] == RED
     assert second.json()["current_player"] == YELLOW
     assert third.json()["current_player"] == RED
+
 
 def test_drop_piece_places_red_piece_and_switches_player():
     client = make_client()
@@ -83,15 +87,17 @@ def test_drop_piece_places_red_piece_and_switches_player():
     assert data["board"][1][0] == YELLOW
     assert data["current_player"] == RED
 
+
 def test_unkown_game_ID():
     client = make_client()
 
     # Attempt to make a move in a non-existent game
-    move_response = client.post(f"/games/unknown_game_id/moves", json={"column": 0})
+    move_response = client.post("/games/unknown_game_id/moves", json={"column": 0})
     assert move_response.status_code == 404
     data = move_response.json()
     assert "error" in data["detail"]
     assert data["detail"]["error"] == "Game not found"
+
 
 def test_invalid_column():
     client = make_client()
@@ -107,6 +113,7 @@ def test_invalid_column():
     assert "error" in data["detail"]
     assert data["detail"]["error"] == "Invalid column"
 
+
 def test_negative_column_is_invalid():
     client = make_client()
 
@@ -120,6 +127,7 @@ def test_negative_column_is_invalid():
     data = move_response.json()
     assert "error" in data["detail"]
     assert data["detail"]["error"] == "Invalid column"
+
 
 def test_column_full():
     client = make_client()
@@ -139,6 +147,7 @@ def test_column_full():
     data = move_response.json()
     assert "error" in data["detail"]
     assert data["detail"]["error"] == "Column is full"
+
 
 def test_move_after_game_finished():
     client = make_client()
@@ -162,15 +171,15 @@ def test_move_after_game_finished():
     client.post(f"/games/{game_id}/moves", json={"column": 1})
     # RED moves to win
     winning_move = client.post(
-    f"/games/{game_id}/moves",
-    json={"column": 0},
+        f"/games/{game_id}/moves",
+        json={"column": 0},
     )
 
     assert winning_move.status_code == 200
 
     winning_data = winning_move.json()
     assert winning_data["status"] == "win"
-    assert winning_data["winner"] == RED # which == 1
+    assert winning_data["winner"] == RED  # which == 1
 
     # Attempt to make a move after the game has finished
     move_response = client.post(f"/games/{game_id}/moves", json={"column": 1})
@@ -178,4 +187,3 @@ def test_move_after_game_finished():
     data = move_response.json()
     assert "error" in data["detail"]
     assert data["detail"]["error"] == "Game has already finished"
-
