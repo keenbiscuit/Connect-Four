@@ -5,5 +5,5 @@ class GameResponse(BaseModel):
     game_id: str
     board: list[list[int]]
     status: str
-    current_player: int
+    current_player: int  # game turn state
     winner: int | None

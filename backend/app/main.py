@@ -1,6 +1,7 @@
 # import FastAPI from the fastapi package
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
 
+from backend.app.game_state import RED, YELLOW
 from backend.app.schemas.game_response import GameResponse
 from backend.app.schemas.move_request import MoveRequest
 from backend.app.services.game_manager import GameManager
@@ -13,6 +14,10 @@ game_manager = GameManager()
 
 # create map to store active websocket connections for each game
 active_connections: dict[str, set[WebSocket]] = {}
+
+# create map to store assigned player roles for each game
+# game ID → player color mapped to its WebSocket
+player_roles: dict[str, dict[int, WebSocket]] = {}
 
 
 # define health check endpoint
@@ -116,6 +121,13 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
     if game is None:
         await websocket.close(code=1008)
         return
+    # if both player roles are already assigned, reject third connection
+    if len(player_roles.get(game_id, {})) >= 2:
+        await websocket.close(code=1008)
+        return
+
+    # choose an available role for the new connection
+    assigned_player = RED if RED not in player_roles.get(game_id, {}) else YELLOW
 
     # accept the websocket connection and send the initial game state
     await websocket.accept()
@@ -125,6 +137,11 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
         active_connections[game_id] = set()
     active_connections[game_id].add(websocket)
 
+    # register the assigned player role for the game
+    if game_id not in player_roles:
+        player_roles[game_id] = {}
+    player_roles[game_id][assigned_player] = websocket
+
     # send the initial game state to the connected client
     await websocket.send_json(
         {
@@ -133,6 +150,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
             "board": game.board,
             "status": game.status,
             "current_player": game.current_player,
+            "assigned_player": assigned_player,
             "winner": game.winner,
         }
     )
@@ -145,9 +163,20 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
         print("Client disconnected")
     # remove the websocket connection from the active connections set when the client disconnects
     finally:
-        connections = active_connections.get(game_id, set())
+        connections = active_connections.get(game_id)
         if connections is not None:
             connections.discard(websocket)
         # If there are no more connections for the game, remove the game_id from active_connections
-        if not connections:
+        if connections is not None and not connections:
             active_connections.pop(game_id, None)
+
+        roles = player_roles.get(
+            game_id
+        )  # returns real role or none if no roles exist for the game
+        if roles is not None and roles.get(assigned_player) is websocket:
+            roles.pop(
+                assigned_player, None
+            )  # safely removes only endpoints own role from the game
+        # If there are no more roles for the game, remove the game_id from player_roles
+        if roles is not None and not roles:
+            player_roles.pop(game_id, None)
