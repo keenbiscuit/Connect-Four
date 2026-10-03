@@ -157,7 +157,64 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
     try:
         while True:
             #  will later become client to server move message handler
-            _ = await websocket.receive_text()
+            move = await websocket.receive_json()
+            if move.get("type") == "move":
+                column = move.get("column")
+
+                # if column is not a non-boolean integer, reject the move
+                if not isinstance(column, int) or isinstance(column, bool):
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "message": "Invalid column type",
+                        }
+                    )
+                    continue
+
+                # if the assigned player is not the current player, ignore the move
+                if assigned_player != game.current_player:
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "message": "It's not your turn",
+                        }
+                    )
+                    continue
+
+                result = game.drop_piece(column)
+
+                if not result.success:
+                    # send result.reason as an error message to the client
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "message": f"Move failed: {result.reason}",
+                        }
+                    )
+                    continue
+
+                # mutate the game state and broadcast the updated state to all connected clients for the game
+                for recipient_player, recipient_ws in player_roles.get(
+                    game_id, {}
+                ).items():
+                    await recipient_ws.send_json(
+                        {
+                            "type": "game_state",
+                            "game_id": game_id,
+                            "board": game.board,
+                            "status": game.status,
+                            "current_player": game.current_player,
+                            "assigned_player": recipient_player,
+                            "winner": game.winner,
+                        }
+                    )
+            else:
+                await websocket.send_json(
+                    {
+                        "type": "error",
+                        "message": "Unsupported Message type",
+                    }
+                )
     except WebSocketDisconnect:
         # Will change to logging in the future
         print("Client disconnected")

@@ -11,6 +11,7 @@ YELLOW = 2
 
 class GameState:
     def __init__(self, starting_player: int = RED) -> None:
+        # Board rows are indexed from 0 (bottom) to 5 (top), and columns are indexed from 0 (left) to 6 (right)
         self.board = [[EMPTY for _ in range(COLUMNS)] for _ in range(ROWS)]
 
         self.status = "active"  # can be "active", "win", or "draw"
