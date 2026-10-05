@@ -191,3 +191,37 @@ def test_move_after_game_finished():
     data = move_response.json()
     assert "error" in data["detail"]
     assert data["detail"]["error"] == "Game has already finished"
+
+def test_create_game_with_default_mode():
+    client = make_client()
+
+    # Create a new game without specifying the mode
+    response = client.post("/games")
+    assert response.status_code == 201
+    data = response.json()
+    assert "game_id" in data
+    assert "mode" in data
+    assert data["mode"] == "human_vs_human"
+    assert data["bot_player"] is None
+
+def test_create_game_with_specified_mode():
+    client = make_client()
+
+    # Create a new game specifying the mode as "human_vs_bot"
+    response = client.post("/games", json={"mode": "human_vs_bot"})
+    assert response.status_code == 201
+    data = response.json()
+    assert "game_id" in data
+    assert "mode" in data
+    assert data["mode"] == "human_vs_bot"
+    assert data["bot_player"] == YELLOW
+
+def test_invalid_mode_input_is_rejected():
+    client = make_client()
+
+    # Attempt to create a new game with an invalid mode
+    response = client.post("/games", json={"mode": "invalid_mode"})
+    assert response.status_code == 422
+    data = response.json()
+    assert "detail" in data
+    assert data["detail"][0]["loc"] == ["body", "mode"]

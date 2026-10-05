@@ -10,7 +10,7 @@ YELLOW = 2
 
 
 class GameState:
-    def __init__(self, starting_player: int = RED) -> None:
+    def __init__(self, starting_player: int = RED, mode: str = "human_vs_human", bot_player: int | None = None) -> None:
         # Board rows are indexed from 0 (bottom) to 5 (top), and columns are indexed from 0 (left) to 6 (right)
         self.board = [[EMPTY for _ in range(COLUMNS)] for _ in range(ROWS)]
 
@@ -18,8 +18,8 @@ class GameState:
         self.winner = None  # can be RED, YELLOW, or None depending on the game outcome
         self.current_player = starting_player  # or YELLOW, depending on who starts
         self.starting_player = starting_player
-        self.mode = "human_vs_human" # can be "human_vs_human" or "human_vs_bot"
-        self.bot_player = None  # can be RED or YELLOW if playing against a bot
+        self.mode = mode # can be "human_vs_human" or "human_vs_bot"
+        self.bot_player = bot_player  # can be RED or YELLOW if playing against a bot
 
     # Drop a piece into a column for the current player
     def drop_piece(self, column: int) -> MoveResult:

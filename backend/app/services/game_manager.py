@@ -1,6 +1,7 @@
 # contains the GameManager class responsible for creating and managing multiple game instances
 
 import uuid
+from typing import Literal
 
 from backend.app.game_state import RED, YELLOW, GameState
 
@@ -11,14 +12,21 @@ class GameManager:
         self.next_starting_player = RED
 
     # creates a unique game ID and returns ID & safe game state
-    def create_game(self) -> tuple[str, GameState]:
+    def create_game(self, mode: Literal["human_vs_human", "human_vs_bot"] = "human_vs_human") -> tuple[str, GameState]:
         # Generate a unique game ID
         unique_game_id = uuid.uuid4()
         game_id = str(unique_game_id)
 
+        # Determine the bot player based on the game mode
+        if mode == "human_vs_bot":
+            bot_player = YELLOW
+        else:
+            bot_player = None
+
+
         # Determine the starting player for the new game
         starting_player = self.next_starting_player
-        game = GameState(starting_player=starting_player)
+        game = GameState(starting_player=starting_player, mode=mode, bot_player=bot_player)
 
         # Store the newly created game in the games dictionary
         self.games[game_id] = game

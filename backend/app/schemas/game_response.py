@@ -7,5 +7,5 @@ class GameResponse(BaseModel):
     status: str
     current_player: int  # game turn state
     winner: int | None
-    mode: str  # can be "human_vs_human" or "human_vs_bot"
+    mode: str | None # can be "human_vs_human" or "human_vs_bot"
     bot_player: int | None  # can be RED or YELLOW if playing against a bot

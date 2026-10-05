@@ -1,7 +1,9 @@
 # import FastAPI from the fastapi package
+
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
 
 from backend.app.game_state import RED, YELLOW
+from backend.app.schemas.create_game_request import CreateGameRequest
 from backend.app.schemas.game_response import GameResponse
 from backend.app.schemas.move_request import MoveRequest
 from backend.app.services.game_manager import GameManager
@@ -18,6 +20,7 @@ active_connections: dict[str, set[WebSocket]] = {}
 # create map to store assigned player roles for each game
 # game ID → player color mapped to its WebSocket
 player_roles: dict[str, dict[int, WebSocket]] = {}
+
 
 
 # define health check endpoint
@@ -49,8 +52,16 @@ def get_game(game_id: str):
 
 # define endpoint for creating a new game
 @app.post("/games", response_model=GameResponse, status_code=status.HTTP_201_CREATED)
-def create_game():
-    game_id, game = game_manager.create_game()
+def create_game(request: CreateGameRequest | None = None):
+    # determine the game mode from the request, defaulting to "human_vs_human" if not provided
+
+    if request is not None:
+        mode = request.mode
+    else:
+        mode = "human_vs_human"
+
+    game_id, game = game_manager.create_game(mode=mode)
+    
     # return the newly created game as a response
     return GameResponse(
         game_id=game_id,
@@ -61,6 +72,8 @@ def create_game():
         bot_player=game.bot_player,
         winner=game.winner,
     )
+
+
 
 
 # define endpoint for dropping a piece in a game
