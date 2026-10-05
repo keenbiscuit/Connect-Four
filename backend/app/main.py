@@ -154,10 +154,14 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
             "winner": game.winner,
         }
     )
+
     try:
         while True:
             #  will later become client to server move message handler
+
             move = await websocket.receive_json()
+
+            # handle the received move message
             if move.get("type") == "move":
                 column = move.get("column")
 
@@ -193,7 +197,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
                     )
                     continue
 
-                # mutate the game state and broadcast the updated state to all connected clients for the game
+                # broadcast the updated game state to all connected clients for the game
                 for recipient_player, recipient_ws in player_roles.get(
                     game_id, {}
                 ).items():
@@ -216,10 +220,10 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
                     }
                 )
     except WebSocketDisconnect:
-        # Will change to logging in the future
-        print("Client disconnected")
-    # remove the websocket connection from the active connections set when the client disconnects
+        pass
     finally:
+        # remove the websocket connection from the active connections set when the client disconnects
+        # remove the websocket connection from the active connections set when the client disconnects
         connections = active_connections.get(game_id)
         if connections is not None:
             connections.discard(websocket)
