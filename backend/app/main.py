@@ -41,6 +41,8 @@ def get_game(game_id: str):
         board=game.board,
         status=game.status,
         current_player=game.current_player,
+        mode=game.mode,
+        bot_player=game.bot_player,
         winner=game.winner,
     )
 
@@ -55,6 +57,8 @@ def create_game():
         board=game.board,
         status=game.status,
         current_player=game.current_player,
+        mode=game.mode,
+        bot_player=game.bot_player,
         winner=game.winner,
     )
 
@@ -109,6 +113,8 @@ def drop_piece(game_id: str, move: MoveRequest):
         board=game.board,
         status=game.status,
         current_player=game.current_player,
+        mode=game.mode,
+        bot_player=game.bot_player,
         winner=game.winner,
     )
 
@@ -151,6 +157,8 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
             "status": game.status,
             "current_player": game.current_player,
             "assigned_player": assigned_player,
+            "mode": game.mode,
+            "bot_player": game.bot_player,
             "winner": game.winner,
         }
     )
@@ -209,6 +217,8 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
                             "status": game.status,
                             "current_player": game.current_player,
                             "assigned_player": recipient_player,
+                            "mode": game.mode,
+                            "bot_player": game.bot_player,
                             "winner": game.winner,
                         }
                     )

@@ -33,6 +33,8 @@ def test_websocket_connection():
         assert data["status"] == "active"
         assert data["current_player"] == RED
         assert data["assigned_player"] == RED
+        assert data["mode"] == "human_vs_human"
+        assert data["bot_player"] is None
         assert data["winner"] is None
         assert game_id in main.active_connections
         assert len(main.active_connections[game_id]) == 1
@@ -61,6 +63,10 @@ def test_two_websocket_connections():
             data2 = websocket2.receive_json()
             assert data1["type"] == "game_state"
             assert data2["type"] == "game_state"
+            assert data1["mode"] == "human_vs_human"
+            assert data2["mode"] == "human_vs_human"
+            assert data1["bot_player"] is None
+            assert data2["bot_player"] is None
             assert data1["game_id"] == game_id
             assert data2["game_id"] == game_id
             assert data1["board"] == [[EMPTY] * 7 for _ in range(6)]
@@ -119,6 +125,10 @@ def test_third_connection_rejected():
         data2 = websocket2.receive_json()
         assert data1["type"] == "game_state"
         assert data2["type"] == "game_state"
+        assert data1["mode"] == "human_vs_human"
+        assert data2["mode"] == "human_vs_human"
+        assert data1["bot_player"] is None
+        assert data2["bot_player"] is None
         assert data1["game_id"] == game_id
         assert data2["game_id"] == game_id
 

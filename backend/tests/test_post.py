@@ -23,6 +23,8 @@ def test_create_game():
     assert "board" in data
     assert "status" in data
     assert "current_player" in data
+    assert "mode" in data
+    assert "bot_player" in data
     assert "winner" in data
     assert isinstance(data["game_id"], str)
     assert isinstance(data["board"], list)
@@ -37,6 +39,8 @@ def test_create_game():
 
     # assert the current player is either "RED" or "YELLOW"
     assert data["current_player"] == RED
+    assert data["mode"] == "human_vs_human"
+    assert data["bot_player"] is None
 
     # assert the winner is either None since game is fresh
     assert data["winner"] is None

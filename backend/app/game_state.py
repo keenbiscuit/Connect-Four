@@ -18,6 +18,8 @@ class GameState:
         self.winner = None  # can be RED, YELLOW, or None depending on the game outcome
         self.current_player = starting_player  # or YELLOW, depending on who starts
         self.starting_player = starting_player
+        self.mode = "human_vs_human" # can be "human_vs_human" or "human_vs_bot"
+        self.bot_player = None  # can be RED or YELLOW if playing against a bot
 
     # Drop a piece into a column for the current player
     def drop_piece(self, column: int) -> MoveResult:
