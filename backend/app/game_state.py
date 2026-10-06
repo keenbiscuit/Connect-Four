@@ -136,21 +136,29 @@ class GameState:
 
     # Helper to check if the last move was a winning move
     def check_win(self, row: int, column: int) -> bool:
-        # Check all directions for a connect 4
+        return check_win_from(self.board, row, column, self.current_player)
+
+    # Helper to check if the game is a draw (no more valid moves)
+    def check_draw(self) -> bool:
+        return all(self.is_column_full(col) for col in range(COLUMNS))
+
+# Helper function to check if a specific move results in a win for the given player on the given board
+# This function is useful for simulating potential moves without altering the actual game state
+def check_win_from(board, row, column, player) -> bool:
         directions = [
-            (0, 1),
-            (1, 0),
-            (1, 1),
-            (1, -1),
+        (0, 1),
+        (1, 0),
+        (1, 1),
+        (1, -1),
         ]  # horizontal, vertical, diagonal /
         for dr, dc in directions:
             count = 1
-            # Check in the positive direction
+        # Check in the positive direction
             r, c = row + dr, column + dc
             while (
-                0 <= r < ROWS
-                and 0 <= c < COLUMNS
-                and self.board[r][c] == self.current_player
+            0 <= r < ROWS
+            and 0 <= c < COLUMNS
+            and board[r][c] == player
             ):
                 count += 1
                 r += dr
@@ -160,7 +168,7 @@ class GameState:
             while (
                 0 <= r < ROWS
                 and 0 <= c < COLUMNS
-                and self.board[r][c] == self.current_player
+                and board[r][c] == player
             ):
                 count += 1
                 r -= dr
@@ -169,6 +177,4 @@ class GameState:
                 return True
         return False
 
-    # Helper to check if the game is a draw (no more valid moves)
-    def check_draw(self) -> bool:
-        return all(self.is_column_full(col) for col in range(COLUMNS))
+    
