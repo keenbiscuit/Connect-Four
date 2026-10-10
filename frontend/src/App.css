@@ -78,6 +78,13 @@
   min-width: 0;
 }
 
+.transition-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 75vh;
+}
+
 .eyebrow {
   margin: 0 0 12px;
   color: var(--accent);
@@ -390,8 +397,8 @@
   line-height: 1.7;
 }
 
-.primary-button,
-.secondary-button {
+.create-game-button,
+.join-game-button {
   width: 100%;
   min-height: 44px;
   padding: 12px 14px;
@@ -400,7 +407,7 @@
   font-weight: 700;
 }
 
-.primary-button {
+.create-game-button {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -409,15 +416,15 @@
   border: 1px solid var(--accent);
 }
 
-.secondary-button {
+.join-game-button {
   margin-top: 10px;
   color: var(--text);
   background: transparent;
   border: 1px solid #3b485e;
 }
 
-.primary-button:disabled,
-.secondary-button:disabled {
+.create-game-button:disabled,
+.join-game-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
 }
