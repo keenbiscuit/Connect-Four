@@ -8,6 +8,10 @@ export default defineConfig({
   server: {
     proxy: {
       "/games": "http://localhost:8000",
+      "/ws/games": {
+        target: "ws://127.0.0.1:8000",
+        ws: true,
+      },
     },
   },
 });

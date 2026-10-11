@@ -170,6 +170,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
             "status": game.status,
             "current_player": game.current_player,
             "assigned_player": assigned_player,
+            "starting_player": game.starting_player,
             "mode": game.mode,
             "bot_player": game.bot_player,
             "winner": game.winner,

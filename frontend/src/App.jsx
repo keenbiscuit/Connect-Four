@@ -1,5 +1,5 @@
 import "./App.css";
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const EMPTY = 0;
 const RED = 1;
@@ -70,7 +70,7 @@ function PlayerCard({ player, assignedPlayer, currentPlayer, isActive }) {
   );
 }
 
-function Board({ board }) {
+function Board({ board, cantClick, onColumnClick }) {
   return (
     <div className="board-panel">
       <div className="column-controls" aria-label="Column controls">
@@ -78,8 +78,8 @@ function Board({ board }) {
           <button
             key={columnIndex}
             className="column-button"
-            type="button"
             disabled
+            type="button"
             aria-label={`Drop a piece in column ${columnIndex + 1}; unavailable in preview`}
           >
             <span>{columnIndex + 1}</span>
@@ -91,13 +91,15 @@ function Board({ board }) {
       </div>
 
       <div className="board" aria-label="Connect Four board">
-        {board.map((row, rowIndex) => (
+        {[...board].reverse().map((row, rowIndex) => (
           <div className="board-row" key={rowIndex}>
             {row.map((cell, columnIndex) => (
-              <div
+              <button
                 className={`board-cell board-cell-${cellColor(cell)}`}
+                disabled={cantClick || cell != EMPTY}
+                onClick={() => onColumnClick(columnIndex)}
                 key={columnIndex}
-                role="img"
+                type="button"
                 aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}: ${
                   cell === EMPTY ? "Empty" : playerName(cell)
                 }`}
@@ -117,10 +119,58 @@ function Board({ board }) {
 
 function App() {
   const [screen, setScreen] = useState("welcome");
+  const [gameId, setGameId] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState(null);
+  const [receivedGameData, setReceivedGameData] = useState(null);
+  const [joinGameId, setJoinGameId] = useState("");
+  const [cantPlay, setCantPlay] = useState(null);
+  const websocket = useRef(null);
 
   const game = sampleGame;
-  const isActive = game.status === "active";
-  const currentColor = cellColor(game.current_player);
+
+  // Websocket Connection
+  useEffect(() => {
+    if (gameId != null) {
+      const WS_URL = "ws://localhost:5173/ws/games/";
+      const socket = new WebSocket(WS_URL + gameId);
+      websocket.current = socket;
+
+      socket.onopen = () => {
+        setConnectionStatus("Connected");
+        console.log("Connection Opened");
+      };
+
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data["type"] === "game_state") {
+          console.log("Recieved: ", data);
+          setReceivedGameData(data);
+
+          // If not the current plauyer, no move can be made
+          if (
+            (data["assigned_player"] === RED ||
+              data["assigned_player"] === YELLOW) &&
+            data["assigned_player"] === data["current_player"] &&
+            data["status"] == "active"
+          ) {
+            setCantPlay(false);
+          } else {
+            setCantPlay(true);
+          }
+
+          setScreen("game")
+        }
+      };
+
+      socket.onclose = () => {
+        setConnectionStatus("Disconnected");
+      };
+      // Function saved for cleanup
+      return () => {
+        socket.close();
+      };
+    }
+  }, [gameId]);
 
   // Create Game Button
   async function handleCreateGame() {
@@ -132,14 +182,33 @@ function App() {
         method: "POST",
       });
       if (!response.ok) {
-        setTimeout(() => setScreen("welcome"), 750);
+        setTimeout(() => setScreen("welcome"), 500);
         throw new Error("Network response was not ok");
       }
       const json = await response.json();
-      setTimeout(() => setScreen("game"), 750);
-      return json["game_id"];
+      setGameId(json["game_id"]);
+      setTimeout(() => setScreen("game"), 500);
     } catch (error) {
       console.error("Fetch Error: ", error);
+    }
+  }
+
+  function handleJoinGame() {
+    const text = joinGameId.replace(/\s/g, "");
+
+    if (joinGameId != "") {
+      setGameId(text);
+    }
+  }
+
+  function columnClickHandler(columnIndex) {
+    if (websocket.current?.readyState === WebSocket.OPEN) {
+      const move = {
+        type: "move",
+        column: columnIndex
+      };
+      websocket.current.send(JSON.stringify(move));
+      console.log(receivedGameData['board'][0][columnIndex])
     }
   }
 
@@ -242,10 +311,19 @@ function App() {
               className="game-input"
               type="text"
               placeholder="Enter a game ID"
-              disabled
+              value={joinGameId}
+              onChange={(event) => {
+                setJoinGameId(event.target.value);
+              }}
             />
 
-            <button className="join-game-button" type="button" disabled>
+            <button
+              className="join-game-button"
+              type="button"
+              onClick={() => {
+                handleJoinGame();
+              }}
+            >
               Join game
             </button>
 
@@ -268,14 +346,14 @@ function App() {
             <div className="turn-panel">
               <div className="turn-copy">
                 <span
-                  className={`turn-indicator turn-indicator-${currentColor}`}
+                  className={`turn-indicator turn-indicator-${receivedGameData['current_player']}`}
                   aria-hidden="true"
                 />
                 <div>
                   <h2>{turnMessage(game)}</h2>
                   <p>
-                    {isActive
-                      ? "Choose a column when the live game is connected."
+                    {receivedGameData["status"]
+                      ? "Choose a column to drop your piece."
                       : "This game is complete."}
                   </p>
                 </div>
@@ -284,11 +362,14 @@ function App() {
               <span className="sample-label">Sample position</span>
             </div>
 
-            <Board board={game.board} />
+            <Board
+              board={receivedGameData["board"]}
+              onColumnClick={columnClickHandler}
+              cantClick={cantPlay}
+            />
 
             <p className="preview-note">
-              Presentation preview only. Column controls will become available
-              after backend integration.
+              Good Luck Player {playerName(receivedGameData["current_player"])}
             </p>
           </section>
 
@@ -302,30 +383,36 @@ function App() {
               <div className="player-list">
                 <PlayerCard
                   player={RED}
-                  assignedPlayer={game.assigned_player}
-                  currentPlayer={game.current_player}
-                  isActive={isActive}
+                  assignedPlayer={receivedGameData["assigned_player"]}
+                  currentPlayer={receivedGameData["current_player"]}
+                  isActive={receivedGameData["status"]}
                 />
                 <PlayerCard
                   player={YELLOW}
-                  assignedPlayer={game.assigned_player}
-                  currentPlayer={game.current_player}
-                  isActive={isActive}
+                  assignedPlayer={receivedGameData["assigned_player"]}
+                  currentPlayer={receivedGameData["current_player"]}
+                  isActive={receivedGameData["status"]}
                 />
               </div>
 
               <div className="game-facts">
                 <div>
                   <span>Your color:</span>
-                  <span>{playerName(game.assigned_player)}</span>
+                  <span>{playerName(receivedGameData["assigned_player"])}</span>
                 </div>
                 <div>
                   <span>Game status:</span>
-                  <span className="status-value">{game.status}</span>
+                  <span className="status-value">
+                    {receivedGameData["status"]}
+                  </span>
+                </div>
+                <div>
+                  <span>Game Id:</span>
+                  <span className="status-value">{gameId}</span>
                 </div>
                 <div>
                   <span>Connection:</span>
-                  <span>Not connected</span>
+                  <span>{connectionStatus}</span>
                 </div>
               </div>
             </section>
