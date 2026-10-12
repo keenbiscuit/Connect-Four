@@ -35,12 +35,12 @@ def test_reset_after_win():
     assert game.board == [[EMPTY for _ in range(COLUMNS)] for _ in range(ROWS)]
     assert game.status == "active"
     assert game.winner is None
-    assert game.current_player == YELLOW
-    assert game.starting_player == YELLOW
+    assert game.current_player == RED
+    assert game.starting_player == RED
 
     result = game.drop_piece(3)
     assert result.success is True
-    assert result.player == YELLOW
+    assert result.player == RED
 
 
 def test_reset_after_draw():
@@ -61,7 +61,7 @@ def test_reset_after_draw():
     assert game.board == [[EMPTY for _ in range(COLUMNS)] for _ in range(ROWS)]
     assert game.status == "active"
     assert game.winner is None
-    assert game.current_player == RED
+    assert game.current_player == YELLOW
 
 
 @pytest.mark.parametrize(
@@ -82,7 +82,7 @@ def test_reset_preserves_configuration(mode, bot_player):
 
     assert game.reset_game() is True
 
-    assert game.starting_player == RED
+    assert game.starting_player == YELLOW
     assert game.mode == mode
     assert game.bot_player == bot_player
 

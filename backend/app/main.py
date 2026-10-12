@@ -229,6 +229,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
                             "status": game.status,
                             "current_player": game.current_player,
                             "assigned_player": recipient_player,
+                            "starting_player": game.starting_player,
                             "players_connected": len(player_roles[game_id]),
                             "mode": game.mode,
                             "bot_player": game.bot_player,
@@ -240,6 +241,49 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
                             },
                         }
                     )
+            
+            elif move.get("type") == "reset":
+                roles = player_roles.get(game_id, {})
+
+                if (
+                    assigned_player not in (RED, YELLOW)
+                    or roles.get(assigned_player) is not websocket
+                ):
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "message": "Only an assigned player can reset the game",
+                        }
+                    )
+                    continue
+
+                if not game.reset_game():
+                    await websocket.send_json(
+                        {
+                            "type": "error",
+                            "message": "Only completed games can be reset",
+                        }
+                    )
+                    continue
+
+                for recipient_player, recipient_ws in roles.items():
+                    await recipient_ws.send_json(
+                        {
+                            "type": "game_state",
+                            "game_id": game_id,
+                            "board": game.board,
+                            "status": game.status,
+                            "current_player": game.current_player,
+                            "assigned_player": recipient_player,
+                            "starting_player": game.starting_player,
+                            "players_connected": len(roles),
+                            "mode": game.mode,
+                            "bot_player": game.bot_player,
+                            "winner": game.winner,
+                            "last_move": None,
+                        }
+                    )
+            
             else:
                 await websocket.send_json(
                     {

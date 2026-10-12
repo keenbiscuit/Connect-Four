@@ -108,7 +108,7 @@ function Board({ board, cantClick, onColumnClick, lastMove, resultMessage }) {
                     className={`board-cell board-cell-${cellColor(cell)}${
                       isLastMove ? " piece-drop" : ""
                     }`}
-                    disabled={cantClick || cell != EMPTY }
+                    disabled={cantClick || cell != EMPTY}
                     onClick={() => onColumnClick(columnIndex)}
                     key={columnIndex}
                     type="button"
@@ -160,11 +160,8 @@ function App() {
       };
 
       socket.onmessage = (event) => {
-        
         const data = JSON.parse(event.data);
-        
-    
-          
+
         if (data["type"] === "game_state") {
           console.log("Recieved: ", data);
           setReceivedGameData(data);
@@ -175,7 +172,7 @@ function App() {
               data["assigned_player"] === YELLOW) &&
             data["assigned_player"] === data["current_player"] &&
             data["status"] === "active" &&
-            data["players_connected"] ==2
+            data["players_connected"] == 2
           ) {
             console.log("hello");
             setCantPlay(false);
@@ -184,7 +181,6 @@ function App() {
           }
           setScreen("game");
         }
-    
       };
 
       socket.onclose = () => {
@@ -224,6 +220,15 @@ function App() {
     if (joinGameId != "") {
       setGameId(text);
     }
+  }
+  function handleResetGame() {
+    const socket = websocket.current;
+
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    socket.send(JSON.stringify({ type: "reset" }));
   }
 
   function columnClickHandler(columnIndex) {
@@ -298,7 +303,6 @@ function App() {
                 <span />
               </div>
             </section>
-
           </section>
 
           <section className="sidebar-card" aria-labelledby="setup-title">
@@ -349,7 +353,6 @@ function App() {
             >
               Join game
             </button>
-
           </section>
         </main>
       ) : screen === "game" ? (
@@ -389,6 +392,16 @@ function App() {
               lastMove={receivedGameData["last_move"]}
               resultMessage={message}
             />
+            {(receivedGameData?.status === "win" ||
+              receivedGameData?.status === "draw") && (
+              <button
+                type="button"
+                className="reset-game-button"
+                onClick={handleResetGame}
+              >
+                Play again
+              </button>
+            )}
 
             <p className="preview-note">
               Good Luck Player {playerName(receivedGameData["current_player"])}

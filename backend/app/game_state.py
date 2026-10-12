@@ -153,6 +153,7 @@ class GameState:
         ]
         self.status = "active"
         self.winner = None
+        self.starting_player = YELLOW if self.starting_player == RED else RED
         self.current_player = self.starting_player
 
         return True

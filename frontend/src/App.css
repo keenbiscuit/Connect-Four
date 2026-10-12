@@ -235,6 +235,50 @@
   position: relative;
 }
 
+.reset-game-button {
+  display: block;
+  margin: 1.25rem auto 0;
+  padding: 0.75rem 1.5rem;
+
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+
+  background-color: #2559ca;
+  color: #ffffff;
+
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease;
+}
+
+.reset-game-button:hover {
+  background-color: #102d7a;
+}
+
+.reset-game-button:active {
+  transform: translateY(1px);
+}
+
+.reset-game-button:focus-visible {
+  outline: 3px solid #132a5c;
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reset-game-button {
+    transition: none;
+  }
+
+  .reset-game-button:active {
+    transform: none;
+  }
+}
+
 .result-overlay {
   position: absolute;
   top: 0;
