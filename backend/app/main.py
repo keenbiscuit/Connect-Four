@@ -22,7 +22,6 @@ active_connections: dict[str, set[WebSocket]] = {}
 player_roles: dict[str, dict[int, WebSocket]] = {}
 
 
-
 # define health check endpoint
 @app.get("/health")
 def health():
@@ -61,7 +60,7 @@ def create_game(request: CreateGameRequest | None = None):
         mode = "human_vs_human"
 
     game_id, game = game_manager.create_game(mode=mode)
-    
+
     # return the newly created game as a response
     return GameResponse(
         game_id=game_id,
@@ -72,8 +71,6 @@ def create_game(request: CreateGameRequest | None = None):
         bot_player=game.bot_player,
         winner=game.winner,
     )
-
-
 
 
 # define endpoint for dropping a piece in a game
@@ -161,26 +158,27 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
         player_roles[game_id] = {}
     player_roles[game_id][assigned_player] = websocket
 
-    # send the initial game state to the connected client
-    await websocket.send_json(
-        {
-            "type": "game_state",
-            "game_id": game_id,
-            "board": game.board,
-            "status": game.status,
-            "current_player": game.current_player,
-            "assigned_player": assigned_player,
-            "starting_player": game.starting_player,
-            "mode": game.mode,
-            "bot_player": game.bot_player,
-            "winner": game.winner,
-        }
-    )
+    # send the initial game state to the connected client or clients
+    for recipient_player, recipient_ws in player_roles.get(game_id, {}).items():
+        await recipient_ws.send_json(
+            {
+                "type": "game_state",
+                "game_id": game_id,
+                "board": game.board,
+                "status": game.status,
+                "current_player": game.current_player,
+                "assigned_player": recipient_player,
+                "starting_player": game.starting_player,
+                "players_connected": len(player_roles[game_id]),
+                "mode": game.mode,
+                "bot_player": game.bot_player,
+                "winner": game.winner,
+            }
+        )
 
     try:
         while True:
             #  will later become client to server move message handler
-
             move = await websocket.receive_json()
 
             # handle the received move message
@@ -231,9 +229,15 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
                             "status": game.status,
                             "current_player": game.current_player,
                             "assigned_player": recipient_player,
+                            "players_connected": len(player_roles[game_id]),
                             "mode": game.mode,
                             "bot_player": game.bot_player,
                             "winner": game.winner,
+                            "last_move": {
+                                "row": result.row,
+                                "column": result.column,
+                                "player": result.player,
+                            },
                         }
                     )
             else:

@@ -5,20 +5,20 @@ const EMPTY = 0;
 const RED = 1;
 const YELLOW = 2;
 
-const sampleGame = {
-  board: [
-    [0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 2, 0, 0, 0],
-    [0, 0, 0, 1, 0, 0, 0],
-  ],
-  current_player: RED,
-  assigned_player: RED,
-  status: "active",
-  winner: null,
-};
+// const sampleGame = {
+//   board: [
+//     [0, 0, 0, 0, 0, 0, 0],
+//     [0, 0, 0, 0, 0, 0, 0],
+//     [0, 0, 0, 0, 0, 0, 0],
+//     [0, 0, 0, 0, 0, 0, 0],
+//     [0, 0, 0, 2, 0, 0, 0],
+//     [0, 0, 0, 1, 0, 0, 0],
+//   ],
+//   current_player: RED,
+//   assigned_player: RED,
+//   status: "active",
+//   winner: null,
+// };
 
 function playerName(player) {
   if (player === RED) return "Red";
@@ -70,7 +70,7 @@ function PlayerCard({ player, assignedPlayer, currentPlayer, isActive }) {
   );
 }
 
-function Board({ board, cantClick, onColumnClick }) {
+function Board({ board, cantClick, onColumnClick, lastMove, resultMessage }) {
   return (
     <div className="board-panel">
       <div className="column-controls" aria-label="Column controls">
@@ -90,23 +90,44 @@ function Board({ board, cantClick, onColumnClick }) {
         ))}
       </div>
 
-      <div className="board" aria-label="Connect Four board">
-        {[...board].reverse().map((row, rowIndex) => (
-          <div className="board-row" key={rowIndex}>
-            {row.map((cell, columnIndex) => (
-              <button
-                className={`board-cell board-cell-${cellColor(cell)}`}
-                disabled={cantClick || cell != EMPTY}
-                onClick={() => onColumnClick(columnIndex)}
-                key={columnIndex}
-                type="button"
-                aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}: ${
-                  cell === EMPTY ? "Empty" : playerName(cell)
-                }`}
-              />
-            ))}
+      <div className="board-wrapper" id="board-wrapper">
+        <div className="board" aria-label="Connect Four board">
+          {[...board].reverse().map((row, rowIndex) => (
+            <div className="board-row" key={rowIndex}>
+              {row.map((cell, columnIndex) => {
+                const backendRow = board.length - 1 - rowIndex;
+
+                const isLastMove =
+                  lastMove != null &&
+                  backendRow === lastMove.row &&
+                  columnIndex === lastMove.column;
+
+                return (
+                  <button
+                    style={{ "--drop-steps": rowIndex + 1 }}
+                    className={`board-cell board-cell-${cellColor(cell)}${
+                      isLastMove ? " piece-drop" : ""
+                    }`}
+                    disabled={cantClick || cell != EMPTY }
+                    onClick={() => onColumnClick(columnIndex)}
+                    key={columnIndex}
+                    type="button"
+                    aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}: ${
+                      cell === EMPTY ? "Empty" : playerName(cell)
+                    }`}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        {resultMessage && (
+          <div className="result-overlay">
+            <div className="result-content">
+              <h2>{resultMessage}</h2>
+            </div>
           </div>
-        ))}
+        )}
       </div>
 
       <div className="board-footer">
@@ -123,10 +144,8 @@ function App() {
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [receivedGameData, setReceivedGameData] = useState(null);
   const [joinGameId, setJoinGameId] = useState("");
-  const [cantPlay, setCantPlay] = useState(null);
+  const [cantPlay, setCantPlay] = useState(true);
   const websocket = useRef(null);
-
-  const game = sampleGame;
 
   // Websocket Connection
   useEffect(() => {
@@ -141,25 +160,31 @@ function App() {
       };
 
       socket.onmessage = (event) => {
+        
         const data = JSON.parse(event.data);
+        
+    
+          
         if (data["type"] === "game_state") {
           console.log("Recieved: ", data);
           setReceivedGameData(data);
 
-          // If not the current plauyer, no move can be made
+          // If not the current player, no move can be made
           if (
             (data["assigned_player"] === RED ||
               data["assigned_player"] === YELLOW) &&
             data["assigned_player"] === data["current_player"] &&
-            data["status"] == "active"
+            data["status"] === "active" &&
+            data["players_connected"] ==2
           ) {
+            console.log("hello");
             setCantPlay(false);
           } else {
             setCantPlay(true);
           }
-
-          setScreen("game")
+          setScreen("game");
         }
+    
       };
 
       socket.onclose = () => {
@@ -205,11 +230,21 @@ function App() {
     if (websocket.current?.readyState === WebSocket.OPEN) {
       const move = {
         type: "move",
-        column: columnIndex
+        column: columnIndex,
       };
       websocket.current.send(JSON.stringify(move));
-      console.log(receivedGameData['board'][0][columnIndex])
     }
+  }
+  let message = null;
+
+  if (receivedGameData?.status === "win") {
+    if (receivedGameData["winner"] === receivedGameData["assigned_player"]) {
+      message = "YOU WON! :)";
+    } else {
+      message = "YOU LOST! :(";
+    }
+  } else if (receivedGameData?.status === "draw") {
+    message = "IT WAS A DRAW!";
   }
 
   return (
@@ -227,7 +262,7 @@ function App() {
 
         <span className="preview-badge">
           <span className="preview-dot" aria-hidden="true" />
-          UI preview
+          Connected
         </span>
       </header>
 
@@ -264,18 +299,6 @@ function App() {
               </div>
             </section>
 
-            <button
-              className="join-game-button"
-              type="button"
-              onClick={() => setScreen("game")}
-              style={{ marginTop: "20px" }}
-            >
-              Preview game screen
-            </button>
-
-            <p className="preview-note">
-              This opens sample data, not a live game.
-            </p>
           </section>
 
           <section className="sidebar-card" aria-labelledby="setup-title">
@@ -327,9 +350,6 @@ function App() {
               Join game
             </button>
 
-            <p className="setup-note">
-              Create and join will become available after backend integration.
-            </p>
           </section>
         </main>
       ) : screen === "game" ? (
@@ -346,13 +366,13 @@ function App() {
             <div className="turn-panel">
               <div className="turn-copy">
                 <span
-                  className={`turn-indicator turn-indicator-${receivedGameData['current_player']}`}
+                  className={`turn-indicator turn-indicator-${receivedGameData["current_player"]}`}
                   aria-hidden="true"
                 />
                 <div>
-                  <h2>{turnMessage(game)}</h2>
+                  <h2>{turnMessage(receivedGameData)}</h2>
                   <p>
-                    {receivedGameData["status"]
+                    {receivedGameData["status"] === "active"
                       ? "Choose a column to drop your piece."
                       : "This game is complete."}
                   </p>
@@ -366,6 +386,8 @@ function App() {
               board={receivedGameData["board"]}
               onColumnClick={columnClickHandler}
               cantClick={cantPlay}
+              lastMove={receivedGameData["last_move"]}
+              resultMessage={message}
             />
 
             <p className="preview-note">

@@ -14,6 +14,29 @@ def make_test_client():
     return TestClient(main.app)
 
 
+def receive_two_player_connection_states(websocket1, websocket2, game_id):
+    # Player one's original state, sent before player two joined.
+    initial_red = websocket1.receive_json()
+    assert initial_red["type"] == "game_state"
+    assert initial_red["game_id"] == game_id
+    assert initial_red["assigned_player"] == RED
+    assert initial_red["players_connected"] == 1
+
+    # Player two joining triggers a broadcast to both sockets.
+    data1 = websocket1.receive_json()
+    data2 = websocket2.receive_json()
+
+    for data in (data1, data2):
+        assert data["type"] == "game_state"
+        assert data["game_id"] == game_id
+        assert data["players_connected"] == 2
+
+    assert data1["assigned_player"] == RED
+    assert data2["assigned_player"] == YELLOW
+
+    return data1, data2
+
+
 def test_websocket_connection():
     # Create a test client
     client = make_test_client()
@@ -33,6 +56,7 @@ def test_websocket_connection():
         assert data["status"] == "active"
         assert data["current_player"] == RED
         assert data["assigned_player"] == RED
+        assert data["players_connected"] == 1
         assert data["mode"] == "human_vs_human"
         assert data["bot_player"] is None
         assert data["winner"] is None
@@ -59,8 +83,9 @@ def test_two_websocket_connections():
     with client.websocket_connect(f"/ws/games/{game_id}") as websocket1:
         with client.websocket_connect(f"/ws/games/{game_id}") as websocket2:
             # receive the initial game state for both clients
-            data1 = websocket1.receive_json()
-            data2 = websocket2.receive_json()
+            data1, data2 = receive_two_player_connection_states(
+                websocket1, websocket2, game_id
+            )
             assert data1["type"] == "game_state"
             assert data2["type"] == "game_state"
             assert data1["mode"] == "human_vs_human"
@@ -121,8 +146,9 @@ def test_third_connection_rejected():
         client.websocket_connect(f"/ws/games/{game_id}") as websocket2,
     ):
         # receive the initial game state for both clients
-        data1 = websocket1.receive_json()
-        data2 = websocket2.receive_json()
+        data1, data2 = receive_two_player_connection_states(
+            websocket1, websocket2, game_id
+        )
         assert data1["type"] == "game_state"
         assert data2["type"] == "game_state"
         assert data1["mode"] == "human_vs_human"
@@ -162,8 +188,9 @@ def test_move_route_with_two_players():
         client.websocket_connect(f"/ws/games/{game_id}") as websocket2,
     ):
         # receive the initial game state for both clients
-        data1 = websocket1.receive_json()
-        data2 = websocket2.receive_json()
+        data1, data2 = receive_two_player_connection_states(
+            websocket1, websocket2, game_id
+        )
         assert data1["type"] == "game_state"
         assert data2["type"] == "game_state"
         assert data1["game_id"] == game_id
@@ -206,8 +233,9 @@ def test_wrong_turn_move_rejected():
         client.websocket_connect(f"/ws/games/{game_id}") as websocket2,
     ):
         # receive the initial game state for both clients
-        data1 = websocket1.receive_json()
-        data2 = websocket2.receive_json()
+        data1, data2 = receive_two_player_connection_states(
+            websocket1, websocket2, game_id
+        )
         assert data1["type"] == "game_state"
         assert data2["type"] == "game_state"
         assert data1["game_id"] == game_id
@@ -242,8 +270,9 @@ def test_invalid_column_move_rejected():
         client.websocket_connect(f"/ws/games/{game_id}") as websocket2,
     ):
         # receive the initial game state for both clients
-        data1 = websocket1.receive_json()
-        data2 = websocket2.receive_json()
+        data1, data2 = receive_two_player_connection_states(
+            websocket1, websocket2, game_id
+        )
         assert data1["type"] == "game_state"
         assert data2["type"] == "game_state"
         assert data1["game_id"] == game_id
@@ -278,8 +307,9 @@ def test_invalid_column_move_rejected_out_of_bounds():
         client.websocket_connect(f"/ws/games/{game_id}") as websocket2,
     ):
         # receive the initial game state for both clients
-        data1 = websocket1.receive_json()
-        data2 = websocket2.receive_json()
+        data1, data2 = receive_two_player_connection_states(
+            websocket1, websocket2, game_id
+        )
         assert data1["type"] == "game_state"
         assert data2["type"] == "game_state"
         assert data1["game_id"] == game_id
@@ -314,8 +344,9 @@ def test_full_column_move_rejected():
         client.websocket_connect(f"/ws/games/{game_id}") as websocket2,
     ):
         # receive the initial game state for both clients
-        data1 = websocket1.receive_json()
-        data2 = websocket2.receive_json()
+        data1, data2 = receive_two_player_connection_states(
+            websocket1, websocket2, game_id
+        )
         assert data1["type"] == "game_state"
         assert data2["type"] == "game_state"
         assert data1["game_id"] == game_id
@@ -347,6 +378,7 @@ def test_full_column_move_rejected():
         assert game.status == "active"  # Ensure the game status is still active
         assert game.winner is None  # Ensure there is no winner yet
 
+
 def test_disconnects_remove_empty_game_connection_tracking():
     # Create a test client
     client = make_test_client()
@@ -362,8 +394,9 @@ def test_disconnects_remove_empty_game_connection_tracking():
         client.websocket_connect(f"/ws/games/{game_id}") as websocket2,
     ):
         # receive the initial game state for both clients
-        data1 = websocket1.receive_json()
-        data2 = websocket2.receive_json()
+        data1, data2 = receive_two_player_connection_states(
+            websocket1, websocket2, game_id
+        )
         assert data1["type"] == "game_state"
         assert data2["type"] == "game_state"
         assert data1["game_id"] == game_id
@@ -375,6 +408,7 @@ def test_disconnects_remove_empty_game_connection_tracking():
     # Check that the game ID is removed from player roles because if game id is gone -> RED & YELLOW + WS connections are gone
     assert game_id not in main.player_roles
 
+
 def test_disconnect_of_one_player_keeps_the_other():
     # Create a test client
     client = make_test_client()
@@ -385,31 +419,22 @@ def test_disconnect_of_one_player_keeps_the_other():
     game_id = response.json()["game_id"]
 
     # connect to the websocket with two clients
-    with  client.websocket_connect(f"/ws/games/{game_id}") as websocket1:
-            with client.websocket_connect(f"/ws/games/{game_id}") as websocket2:
-                # receive the initial game state for both clients
-                data1 = websocket1.receive_json()
-                data2 = websocket2.receive_json()
-                assert data1["type"] == "game_state"
-                assert data2["type"] == "game_state"
-                assert data1["game_id"] == game_id
-                assert data2["game_id"] == game_id
+    with client.websocket_connect(f"/ws/games/{game_id}") as websocket1:
+        with client.websocket_connect(f"/ws/games/{game_id}") as websocket2:
+            # receive the initial game state for both clients
+            data1, data2 = receive_two_player_connection_states(
+                websocket1, websocket2, game_id
+            )
+            assert data1["type"] == "game_state"
+            assert data2["type"] == "game_state"
+            assert data1["game_id"] == game_id
+            assert data2["game_id"] == game_id
 
-            
-            # After one websocket is closed, check that the other connection and role are still present
-            assert game_id in main.active_connections
-            assert game_id in main.player_roles
-            roles = main.player_roles[game_id]
-            assert RED in roles
-            assert YELLOW not in roles
-            assert game_id in main.player_roles
-            assert len(main.active_connections[game_id]) == 1
-
-
-
-    
-
-    
-
-    
-    
+        # After one websocket is closed, check that the other connection and role are still present
+        assert game_id in main.active_connections
+        assert game_id in main.player_roles
+        roles = main.player_roles[game_id]
+        assert RED in roles
+        assert YELLOW not in roles
+        assert game_id in main.player_roles
+        assert len(main.active_connections[game_id]) == 1

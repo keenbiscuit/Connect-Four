@@ -142,6 +142,21 @@ class GameState:
     def check_draw(self) -> bool:
         return all(self.is_column_full(col) for col in range(COLUMNS))
 
+    #Helper to reset game
+    def reset_game(self) -> bool:
+        if self.status not in ("win", "draw"):
+            return False
+
+        self.board = [
+            [EMPTY for _ in range(COLUMNS)]
+            for _ in range(ROWS)
+        ]
+        self.status = "active"
+        self.winner = None
+        self.current_player = self.starting_player
+
+        return True
+
 # Helper function to check if a specific move results in a win for the given player on the given board
 # This function is useful for simulating potential moves without altering the actual game state
 def check_win_from(board, row, column, player) -> bool:
