@@ -207,6 +207,9 @@
 }
 
 .board {
+
+  --row-gap: 10px;
+
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -329,6 +332,7 @@
   border-radius: 50%;
   pointer-events: none;
 }
+
 .board-cell-red::before {
   background: var(--red);
   box-shadow:

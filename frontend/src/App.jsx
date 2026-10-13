@@ -110,7 +110,7 @@ function Board({ board, cantClick, onColumnClick, lastMove, resultMessage }) {
                     }`}
                     disabled={cantClick || cell != EMPTY}
                     onClick={() => onColumnClick(columnIndex)}
-                    key={columnIndex}
+                    key={`${rowIndex}-${columnIndex}`}
                     type="button"
                     aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}: ${
                       cell === EMPTY ? "Empty" : playerName(cell)
@@ -192,7 +192,7 @@ function App() {
       };
     }
   }, [gameId]);
-
+  
   // Create Game Button
   async function handleCreateGame() {
     setScreen("creating");
@@ -359,7 +359,7 @@ function App() {
         <main className="game-layout">
           <section className="play-area" aria-labelledby="game-title">
             <div className="game-heading">
-              <p className="eyebrow">Game preview</p>
+              <p className="eyebrow">Head to Head</p>
               <h1 id="game-title">Make your next move.</h1>
               <p className="heading-description">
                 Two players. Seven columns. One winning connection.
@@ -389,7 +389,7 @@ function App() {
               board={receivedGameData["board"]}
               onColumnClick={columnClickHandler}
               cantClick={cantPlay}
-              lastMove={receivedGameData["last_move"]}
+              lastMove={receivedGameData?.last_move ?? null}
               resultMessage={message}
             />
             {(receivedGameData?.status === "win" ||
