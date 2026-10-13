@@ -1,18 +1,18 @@
 # Real-Time Multiplayer Connect Four
 
-A full-stack, real-time multiplayer Connect Four application built with **Python, FastAPI, WebSockets, and React**.
+A full-stack, real-time multiplayer Connect Four application built with **React, Python, FastAPI, and WebSockets**.
 
-Two players can join the same game, take turns in real time, receive synchronized board updates, see win/loss results, and start a new round with Play Again. The FastAPI backend is server-authoritative: it validates player identity, turn order, moves, wins, draws, and rematches.
+Two players can join the same game, take turns in real time, see synchronized board updates, receive win/loss results, and start a new round with Play Again. The FastAPI backend is server-authoritative: it owns player assignment, game state, turn validation, moves, wins, draws, and rematches.
 
-> Deployment in progress  
+> Live deployment  
 > Frontend: Vercel  
 > Backend: Render
 
 ## Live Demo
 
-- Frontend: Coming soon
-- API: Coming soon
-- API documentation: Coming soon
+- **Play the game:** https://connect-four-bice-nu.vercel.app
+- **Backend API:** https://connect-four-wbku.onrender.com
+- **Interactive API docs:** https://connect-four-wbku.onrender.com/docs
 
 ## Features
 
@@ -31,7 +31,6 @@ Two players can join the same game, take turns in real time, receive synchronize
 - Board resets for both connected players
 - Starting player switches between rounds
 - REST API for game creation and initial state retrieval
-- Automated backend tests with GitHub Actions CI
 - Automated backend tests with GitHub Actions CI
 
 ## Play Again / Rematch Behavior
@@ -64,27 +63,28 @@ This ensures both players begin the rematch from the same state and that neither
 
 ## Architecture
 
-The application uses a server-authoritative design.
+The application uses a server-authoritative, event-driven multiplayer design.
 
-- The React client displays the board and sends player actions.
-- FastAPI owns game creation, move validation, turn order, win detection, and draw detection.
-- The `GameManager` stores active games in memory.
-- Each `GameState` owns its board, current player, move history, and game-completion logic.
-- WebSockets deliver authoritative game-state messages to connected clients.
-- The client treats server responses as the source of truth.
+- The React client renders the board, column controls, player status, match result, and Play Again action.
+- FastAPI owns the authoritative game state and validates every player action.
+- `GameManager` stores active games, player assignments, and per-game WebSocket connections in memory.
+- `GameState` owns the board, current player, move application, win/draw evaluation, and round-reset behavior.
+- Clients use REST to create games and WebSockets for player assignment, game actions, and synchronized state updates.
+- The server validates moves and rematches, then broadcasts authoritative state to both connected players.
 
 ```text
-React Client
-    │
-    ├── REST: Create and retrieve games
-    │
-    └── WebSocket: Receive real-time game state
-                │
-                ▼
-         FastAPI Backend
-                │
-                ├── GameManager
-                └── GameState
+Player 1 React Client                 Player 2 React Client
+          │                                      │
+          └──────────── WebSockets ──────────────┘
+                           │
+                           ▼
+                 FastAPI Game Server
+                           │
+       ┌───────────────────┼───────────────────┐
+       ▼                   ▼                   ▼
+  GameManager         GameState        Connection Tracking
+       │                   │                   │
+       └───────── Authoritative state ─────────┘
 ```
 
 ## Game Rules
@@ -150,7 +150,7 @@ The backend validates:
 /ws/games/{game_id}
 ```
 
-A client connects to a game-specific WebSocket endpoint. For a valid game, the server sends an immediate authoritative state message.
+A client connects to a game-specific WebSocket endpoint. The server assigns the client a player role when applicable, sends the current authoritative state, and broadcasts updated state after valid moves and rematches.
 
 ```json
 {
@@ -165,9 +165,9 @@ A client connects to a game-specific WebSocket endpoint. For a valid game, the s
 [0]
   ],
   "status": "active",
-  "current_player": RED or YELLOW,
-  "assigned_player" : RED or YELLOW,
-  "player_count" : 1,
+  "current_player": 1,
+  "assigned_player": 1,
+  "player_count": 1,
   "winner": null
 }
 ```
@@ -181,46 +181,29 @@ A client connects to a game-specific WebSocket endpoint. For a valid game, the s
 | Attempted move in a full column | 409 |
 | Attempted move after game completion | 409 |
 
-## Local Development
+## Run Locally
 
 ### Backend
 
 From the repository root:
 
 ```bash
-cd backend
 python -m venv .venv
 ```
 
-Activate the virtual environment:
-
-```bash
-# macOS/Linux
-source .venv/bin/activate
-
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-```
-
-Install dependencies:
+Activate it, then install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Run the API:
+Start FastAPI:
 
 ```bash
-uvicorn main:app --reload
+uvicorn backend.app.main:app --reload
 ```
 
-The FastAPI API will be available at:
-
-```text
-http://localhost:8000/health
-```
-
-Interactive API documentation:
+Open API documentation at:
 
 ```text
 http://localhost:8000/docs
@@ -228,19 +211,16 @@ http://localhost:8000/docs
 
 ### Frontend
 
-From the repository root:
-
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Set the local backend values in the frontend environment configuration:
+Open:
 
 ```text
-VITE_API_BASE_URL=http://localhost:5173
-VITE_WS_BASE_URL=ws://localhost:5173
+http://localhost:5173
 ```
 
 ## Testing
@@ -261,48 +241,41 @@ The test suite covers:
 - Horizontal, vertical, and diagonal wins
 - Draws
 - Invalid moves and API error responses
-- Initial WebSocket game-state delivery
+- WebSocket connection, player assignment, move validation, state broadcasts, and rematch behavior
 
 GitHub Actions runs the backend test suite on each relevant push and pull request.
 
 ## Deployment
 
-The app is deployed as two services:
-
-| Service | Platform | Responsibility |
+| Component | Platform | Purpose |
 |---|---|---|
-| Frontend | Vercel | Serves the React application |
-| Backend | Render | Runs the FastAPI REST and WebSocket API |
+| React frontend | Vercel | Hosts the browser-based game UI |
+| FastAPI backend | Render | Hosts REST endpoints, WebSocket connections, and server-authoritative game logic |
 
-### Backend: Render
+The frontend calls the backend with HTTPS and opens secure WebSocket connections with `wss://`.
 
-Render deploys the backend from the repository’s `backend` directory.
+### Production configuration
 
-```text
-Root Directory: backend
-Build Command: pip install -r requirements.txt
-Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
-```
-
-### Frontend: Vercel
-
-Vercel deploys the frontend from the repository’s `frontend` directory.
-
-Set these Vercel environment variables:
+The Vercel frontend uses these build-time environment variables:
 
 ```text
-VITE_API_BASE_URL=[https://YOUR-RENDER-SERVICE.onrender.com](https://YOUR-RENDER-SERVICE.onrender.com)
-VITE_WS_BASE_URL=wss://YOUR-RENDER-SERVICE.onrender.com
+VITE_API_BASE_URL=https://connect-four-wbku.onrender.com
+VITE_WS_BASE_URL=wss://connect-four-wbku.onrender.com
 ```
 
-After Vercel creates the production URL, configure FastAPI CORS to allow that exact frontend origin.
+The FastAPI backend allows requests from:
+
+```text
+http://localhost:5173
+https://connect-four-bice-nu.vercel.app
+```
 
 ## Current Limitations
 
-- Active games are stored in memory.
-- Game state resets if the backend restarts or is redeployed.
-- Persistent completed-game history has not yet been added.
-- Redis Pub/Sub is intentionally deferred until the core multiplayer experience is complete.
+- Active games and live connections are stored in memory.
+- A backend restart or redeploy clears active games and disconnects players.
+- The Render free-tier backend may spin down after 15 minutes with no traffic; the first request afterward can take roughly a minute while the service restarts.
+- Completed-game persistence and multi-instance scaling are planned future enhancements.
 
 ## Roadmap
 
@@ -317,8 +290,9 @@ After Vercel creates the production URL, configure FastAPI CORS to allow that ex
 - [x] Server-authoritative Play Again / rematch flow
 - [x] Alternating starting player across rounds
 - [x] Automated backend tests and GitHub Actions CI
-- [ ] Deploy FastAPI/WebSocket backend to Render
-- [ ] Deploy React frontend to Vercel
-- [ ] Add an AI power-up that suggests or plays one strategically selected move per player per game
+- [x] Deploy FastAPI/WebSocket backend to Render
+- [x] Deploy React frontend to Vercel
+- [ ] Add Human vs Bot mode
+- [ ] Add a limited-use AI power-up that suggests a strategic legal move while the player retains final move choice
 - [ ] Persist completed games with MongoDB
 - [ ] Add Redis Pub/Sub when multi-instance scaling is needed
