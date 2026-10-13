@@ -1,6 +1,7 @@
 # import FastAPI from the fastapi package
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.game_state import RED, YELLOW
 from backend.app.schemas.create_game_request import CreateGameRequest
@@ -10,6 +11,18 @@ from backend.app.services.game_manager import GameManager
 
 # create FastAPI app instance
 app = FastAPI()
+origins = [
+    "http://localhost:5173",
+    "https://connect-four-bice-nu.vercel.app",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # create an instance of the GameManager
 game_manager = GameManager()
@@ -241,7 +254,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
                             },
                         }
                     )
-            
+
             elif move.get("type") == "reset":
                 roles = player_roles.get(game_id, {})
 
@@ -283,7 +296,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
                             "last_move": None,
                         }
                     )
-            
+
             else:
                 await websocket.send_json(
                     {
