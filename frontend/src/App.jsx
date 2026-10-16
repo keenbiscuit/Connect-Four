@@ -1,5 +1,7 @@
 import "./App.css";
 import { useEffect, useState, useRef } from "react";
+import.meta.env.VITE_API__BASE_URL;
+import.meta.env.VITE_WS_BASE__URL;
 
 const EMPTY = 0;
 const RED = 1;
@@ -150,8 +152,9 @@ function App() {
   // Websocket Connection
   useEffect(() => {
     if (gameId != null) {
-      const WS_URL = "ws://localhost:5173/ws/games/";
-      const socket = new WebSocket(WS_URL + gameId);
+      
+      const WS_URL =  import.meta.env.VITE_WS_BASE_URL ?? "ws://localhost:5173"
+      const socket = new WebSocket(WS_URL + "/ws/games/" + gameId);
       websocket.current = socket;
 
       socket.onopen = () => {
@@ -196,14 +199,13 @@ function App() {
   // Create Game Button
   async function handleCreateGame() {
     setScreen("creating");
-
+    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
     // Create game via API POST request
     try {
-      const response = await fetch("/games", {
+      const response = await fetch(baseUrl + "/games", {
         method: "POST",
       });
       if (!response.ok) {
-        setTimeout(() => setScreen("welcome"), 500);
         throw new Error("Network response was not ok");
       }
       const json = await response.json();
@@ -211,6 +213,7 @@ function App() {
       setTimeout(() => setScreen("game"), 500);
     } catch (error) {
       console.error("Fetch Error: ", error);
+      setTimeout(() => setScreen("welcome"), 500);
     }
   }
 
