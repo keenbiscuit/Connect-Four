@@ -1,0 +1,86 @@
+{
+  "test_case": "yellow_blocks_red_vertical_column_5",
+  "recorded_at": "2026-10-19T18:02:09.690845+00:00",
+  "model": "openai/gpt-oss-20b",
+  "reasoning_effort": "low",
+  "max_completion_tokens": 4096,
+  "board": [
+    [
+      0,
+      2,
+      1,
+      2,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      2,
+      2,
+      2,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "current_player": 2,
+  "expected_column": 5,
+  "reports": {
+    "attacker": {
+      "recommended_column": 4,
+      "explanation": "Placing Yellow at column 4 creates a new horizontal spot that sets up a future three‑in‑a‑row with an empty space at column 5, offering a clear attacking line while avoiding immediate exposure to a Red win."
+    },
+    "defender": {
+      "recommended_column": 4,
+      "explanation": "Yellow's move to column 4 creates a new horizontal spot that sets up a future three‑in‑a‑row with an empty space at column 5, while no immediate Red win becomes available afterward, making it a safe choice."
+    },
+    "captain": {
+      "recommended_column": 4,
+      "explanation": "Yellow plays in column 4, landing at row 0. This move does not give Red any immediate four‑in‑a‑row reply, while setting up Yellow’s own horizontal threat for the next turn."
+    }
+  },
+  "checks": {
+    "move_passed": false,
+    "explanation_passed": false,
+    "explanation_review_method": "manual",
+    "review_notes": "captain and defender seem to go based off of attackers decision without any real reflection",
+    "fully_passed": false
+  }
+}

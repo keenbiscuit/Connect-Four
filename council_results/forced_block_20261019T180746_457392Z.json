@@ -1,0 +1,86 @@
+{
+  "test_case": "yellow_blocks_red_vertical_column_5",
+  "recorded_at": "2026-10-19T18:07:46.456934+00:00",
+  "model": "openai/gpt-oss-20b",
+  "reasoning_effort": "low",
+  "max_completion_tokens": 4096,
+  "board": [
+    [
+      0,
+      2,
+      1,
+      2,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      2,
+      2,
+      2,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "current_player": 2,
+  "expected_column": 5,
+  "reports": {
+    "attacker": {
+      "recommended_column": 3,
+      "explanation": "Dropping a Yellow disc in column 3 lands on row 3, forming a diagonal of three Yellow discs at (3,3),(2,2),(1,1) with an open slot at (0,0) for a future win."
+    },
+    "defender": {
+      "recommended_column": 5,
+      "explanation": "Yellow blocks the only immediate Red win by playing in column 5, where Red would otherwise complete a vertical column of four. This move also leaves no other column that gives Red an immediate win."
+    },
+    "captain": {
+      "recommended_column": 3,
+      "explanation": "After dropping a Yellow disc in column 3, Yellow creates a diagonal threat that could lead to a win on (0,0) while also preventing all immediate Red winning replies; no other legal move offers a stronger offensive position."
+    }
+  },
+  "checks": {
+    "move_passed": false,
+    "explanation_passed": false,
+    "explanation_review_method": "manual",
+    "review_notes": "",
+    "fully_passed": false
+  }
+}

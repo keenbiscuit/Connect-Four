@@ -1,0 +1,86 @@
+{
+  "test_case": "yellow_blocks_red_vertical_column_5",
+  "recorded_at": "2026-10-19T18:05:54.146077+00:00",
+  "model": "openai/gpt-oss-20b",
+  "reasoning_effort": "low",
+  "max_completion_tokens": 4096,
+  "board": [
+    [
+      0,
+      2,
+      1,
+      2,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      2,
+      2,
+      2,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "current_player": 2,
+  "expected_column": 5,
+  "reports": {
+    "attacker": {
+      "recommended_column": 0,
+      "explanation": "Dropping Yellow in column 0 lands at (0,0) creating a diagonal of two Yellow discs (at (0,0) and (1,1)) with an open spot at (2,2), forcing Red to block and giving Yellow a winning chance next turn."
+    },
+    "defender": {
+      "recommended_column": 4,
+      "explanation": "Yellow has no immediate winning move, and none of Yellow’s legal moves allow Red to win instantly; playing column 4 blocks a possible horizontal threat and maintains safety."
+    },
+    "captain": {
+      "recommended_column": 0,
+      "explanation": "Dropping Yellow at column 0 lands at (0,0) and does not create any 3‑in‑a‑row that Red can immediately complete; after this move every legal Red reply fails to form four consecutive Reds. No other legal Yellow move blocks all potential Red winning replies, so column 0 is the safest choice."
+    }
+  },
+  "checks": {
+    "move_passed": false,
+    "explanation_passed": false,
+    "explanation_review_method": "manual",
+    "review_notes": "",
+    "fully_passed": false
+  }
+}

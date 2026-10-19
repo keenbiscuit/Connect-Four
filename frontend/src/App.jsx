@@ -177,7 +177,6 @@ function App() {
             data["status"] === "active" &&
             data["players_connected"] == 2
           ) {
-            console.log("hello");
             setCantPlay(false);
           } else {
             setCantPlay(true);

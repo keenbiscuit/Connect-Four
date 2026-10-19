@@ -1,0 +1,86 @@
+{
+  "test_case": "yellow_blocks_red_vertical_column_5",
+  "recorded_at": "2026-10-19T18:09:29.592589+00:00",
+  "model": "openai/gpt-oss-20b",
+  "reasoning_effort": "low",
+  "max_completion_tokens": 4096,
+  "board": [
+    [
+      0,
+      2,
+      1,
+      2,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      2,
+      2,
+      2,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "current_player": 2,
+  "expected_column": 5,
+  "reports": {
+    "attacker": {
+      "recommended_column": 0,
+      "explanation": "Dropping a Yellow disc in column 0 creates a diagonal opportunity toward the top‑right, with the landing cell (0,0) aligning with an existing Yellow at (1,1). This move does not win immediately but sets up a future threat that Red must address."
+    },
+    "defender": {
+      "recommended_column": 5,
+      "explanation": "Red’s only immediate win is a vertical line in column 5 by playing the lowest empty row (row 3). Yellow must play in the same cell to block that threat; column 5 is the only move that prevents an immediate loss."
+    },
+    "captain": {
+      "recommended_column": 5,
+      "explanation": "Dropping a Yellow disc in column 5 lands at (3,5), creating an immediate vertical line of four Yellow discs. No Red can win on the next move because the only column with a potential red threat is column 5, which is already blocked by the Yellow win."
+    }
+  },
+  "checks": {
+    "move_passed": true,
+    "explanation_passed": false,
+    "explanation_review_method": "manual",
+    "review_notes": "chooses correct column but states that this move makes an immediate yellow win",
+    "fully_passed": false
+  }
+}

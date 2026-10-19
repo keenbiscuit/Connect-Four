@@ -1,0 +1,86 @@
+{
+  "test_case": "yellow_blocks_red_vertical_column_5",
+  "recorded_at": "2026-10-19T18:11:12.209690+00:00",
+  "model": "openai/gpt-oss-20b",
+  "reasoning_effort": "low",
+  "max_completion_tokens": 4096,
+  "board": [
+    [
+      0,
+      2,
+      1,
+      2,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      2,
+      2,
+      2,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "current_player": 2,
+  "expected_column": 5,
+  "reports": {
+    "attacker": {
+      "recommended_column": 2,
+      "explanation": "Dropping Yellow at column 2 lands at row 2, forming a diagonal sequence (2,2)-(1,3) of two Yellow discs with an empty (0,4) as a future winning spot, creating an immediate attacking threat for the next turn."
+    },
+    "defender": {
+      "recommended_column": 5,
+      "explanation": "Red’s only immediate win is by dropping at column 5, which would form four vertical red discs. By playing Yellow in column 5, you place a disc at the landing row and block that threat, preventing any immediate loss."
+    },
+    "captain": {
+      "recommended_column": 5,
+      "explanation": "Placing Yellow at column 5 blocks Red’s sole immediate vertical win (three red discs already in that column) and does not create any new threat for Red; no Yellow win is possible this turn."
+    }
+  },
+  "checks": {
+    "move_passed": true,
+    "explanation_passed": true,
+    "explanation_review_method": "manual",
+    "review_notes": "",
+    "fully_passed": true
+  }
+}
