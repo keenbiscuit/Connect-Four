@@ -1,0 +1,26 @@
+{
+  "test_case": "synthetic_red_win_before_yellow_block",
+  "case_source": "hand_authored",
+  "advisor_reports_source": "synthetic",
+  "board": [
+    [0, 1, 2, 1, 0, 2, 0],
+    [0, 1, 1, 1, 0, 2, 0],
+    [0, 1, 0, 2, 0, 2, 0],
+    [0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0]
+  ],
+  "current_player": 1,
+  "expected_column": 1,
+  "reports": {
+    "attacker": {
+      "recommended_column": 1,
+      "explanation": "Yellow occupies column 1 at rows 0, 1, and 2. Dropping Yellow at row 3 completes four consecutive Yellow discs vertically and wins immediately."
+    },
+    "defender": {
+      "recommended_column": 5,
+      "explanation": "Red occupies column 5 at rows 0, 1, and 2 and threatens to win there on its next turn. Yellow should play column 5 to block that vertical threat."
+    }
+  },
+  "expected_explanation": "Yellow wins immediately by playing column 1 and landing at row 3. Blocking Red in column 5 is unnecessary because Yellow's winning move ends the game."
+}
