@@ -2,3 +2,8 @@
 __pycache__/
 .pytest_cache/
 .env
+
+/council_results/guarded_council_*.json
+/captain_results/
+__pycache__/
+/jsonconfig.json
