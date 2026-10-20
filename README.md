@@ -293,6 +293,6 @@ https://connect-four-bice-nu.vercel.app
 - [x] Deploy FastAPI/WebSocket backend to Render
 - [x] Deploy React frontend to Vercel
 - [ ] Add Human vs Bot mode
-- [ ] Add a limited-use AI power-up that suggests a strategic legal move while the player retains final move choice
+- [x] Add a limited-use AI power-up that suggests a strategic legal move while the player retains final move choice
 - [ ] Persist completed games with MongoDB
 - [ ] Add Redis Pub/Sub when multi-instance scaling is needed
