@@ -6,4 +6,4 @@ __pycache__/
 /council_results/guarded_council_*.json
 /captain_results/
 __pycache__/
-/jsonconfig.json
+/jsconfig.json
