@@ -7,21 +7,6 @@ const EMPTY = 0;
 const RED = 1;
 const YELLOW = 2;
 
-// const sampleGame = {
-//   board: [
-//     [0, 0, 0, 0, 0, 0, 0],
-//     [0, 0, 0, 0, 0, 0, 0],
-//     [0, 0, 0, 0, 0, 0, 0],
-//     [0, 0, 0, 0, 0, 0, 0],
-//     [0, 0, 0, 2, 0, 0, 0],
-//     [0, 0, 0, 1, 0, 0, 0],
-//   ],
-//   current_player: RED,
-//   assigned_player: RED,
-//   status: "active",
-//   winner: null,
-// };
-
 function playerName(player) {
   if (player === RED) return "Red";
   if (player === YELLOW) return "Yellow";
@@ -45,7 +30,7 @@ function turnMessage(game) {
 
   return game.current_player === game.assigned_player
     ? "Your turn"
-    : `${playerName(game.current_player)}’s turn`;
+    : `${playerName(game.current_player)}'s turn`;
 }
 
 function PlayerCard({ player, assignedPlayer, currentPlayer, isActive }) {
@@ -63,7 +48,7 @@ function PlayerCard({ player, assignedPlayer, currentPlayer, isActive }) {
       <div className="player-details">
         <span className="player-name">{playerName(player)}</span>
         <span className="player-description">
-          {isYou ? "Your pieces" : "Other player’s pieces"}
+          {isYou ? "Your pieces" : "Other player's pieces"}
         </span>
       </div>
 
@@ -140,6 +125,115 @@ function Board({ board, cantClick, onColumnClick, lastMove, resultMessage }) {
   );
 }
 
+// display private council advice without applying a new move
+// The backend is responsible for turn validation and council use
+function CouncilPanel({
+  game,
+  connected,
+  pending,
+  remaining,
+  advice,
+  error,
+  onRequest,
+}) {
+  const canRequest =
+    connected &&
+    game.status === "active" &&
+    game.players_connected === 2 &&
+    game.current_player === game.assigned_player &&
+    remaining === 1 &&
+    !pending;
+
+  let hint = "One private recommendation per player, per round.";
+
+  if (!connected) {
+    hint = "Connect to the game to consult the council";
+  } else if (pending) {
+    hint = "The advisors are reviewing your position.";
+  } else if (game.status !== "active") {
+    hint = "A new round restores your council use.";
+  } else if (remaining === 0) {
+    hint = "You have used the council this round.";
+  } else if (game.players_connected !== 2) {
+    hint = "Wait for both players to connect.";
+  } else if (game.current_player !== game.assigned_player) {
+    hint = "You can only consult the council on your turn.";
+  }
+
+  return (
+    <section
+      className="sidebar-card council-card"
+      aria-labelledby="council-title"
+      aria-busy={pending}
+    >
+      <div className="council-heading">
+        <div>
+          <p className="eyebrow">Your strategic timeout</p>
+          <h2 id="council-title">Ask the council</h2>
+        </div>
+
+        <span className={`council-credit ${remaining === 0 ? "is-spent" : ""}`}>
+          {remaining} / 1
+        </span>
+      </div>
+
+      <p className="card-description">
+        An attacker, a defender, and a captain review your position. Local
+        tactical checks guard the final recommendation.
+      </p>
+
+      <button
+        className="council-button"
+        type="button"
+        disabled={!canRequest}
+        onClick={onRequest}
+      >
+        {pending ? (
+          <>
+            <span className="council-spinner" aria-hidden="true" />
+            Council is thinking…
+          </>
+        ) : remaining === 0 ? (
+          "Used this round"
+        ) : (
+          "Get my recommendation"
+        )}
+      </button>
+
+      <p className="council-hint">{hint}</p>
+
+      <div aria-live="polite" aria-atomic="true">
+        {advice && (
+          <div className="council-result">
+            <div className="council-result-heading">
+              <span className="council-result-label">Recommended move</span>
+
+              {/* Display columns as 1–7; backend columns remain 0–6. */}
+              <span className="council-column">
+                Column {advice.recommended_column + 1}
+              </span>
+            </div>
+
+            <p>{advice.explanation}</p>
+
+            <span className="council-source">
+              {advice.source === "captain"
+                ? "Captain recommendation · tactical check passed"
+                : "Local tactical fallback"}
+            </span>
+
+            <p className="council-result-note">
+              Advice only. Choose the column yourself to play.
+            </p>
+          </div>
+        )}
+
+        {error && <p className="council-error">{error}</p>}
+      </div>
+    </section>
+  );
+}
+
 function App() {
   const [screen, setScreen] = useState("welcome");
   const [gameId, setGameId] = useState(null);
@@ -149,25 +243,74 @@ function App() {
   const [cantPlay, setCantPlay] = useState(true);
   const websocket = useRef(null);
 
+  // private council display state and server reported availability
+  const [councilPending, setCouncilPending] = useState(false);
+  const [councilRemaining, setCouncilRemaining] = useState(1);
+  const [councilAdvice, setCouncilAdvice] = useState(null);
+  const [councilError, setCouncilError] = useState("");
+
+  // refs keep callbacks current and block duplicate requests
+  // immediately, before React finishes rendering update state
+  const latestGame = useRef(null);
+  const councilRequestInFlight = useRef(false);
+
   // Websocket Connection
   useEffect(() => {
     if (gameId != null) {
-      
-      const WS_URL =  import.meta.env.VITE_WS_BASE_URL ?? "ws://localhost:5173"
+      //discared advice and availability from a previously selected game
+      latestGame.current = null;
+      councilRequestInFlight.current = false;
+      setReceivedGameData(null);
+      setCantPlay(true);
+      setCouncilPending(false);
+      setCouncilRemaining(1);
+      setCouncilAdvice(null);
+      setCouncilError("");
+
+      // ignore callbacks from this socket after cleanup
+      let disposed = false;
+
+      const WS_URL = import.meta.env.VITE_WS_BASE_URL ?? "ws://localhost:5173";
+
       const socket = new WebSocket(WS_URL + "/ws/games/" + gameId);
       websocket.current = socket;
 
       socket.onopen = () => {
+        if (disposed) return;
+
         setConnectionStatus("Connected");
         console.log("Connection Opened");
       };
 
       socket.onmessage = (event) => {
+        if (disposed) return;
+
         const data = JSON.parse(event.data);
 
         if (data["type"] === "game_state") {
           console.log("Recieved: ", data);
+
+          // advice is only available for the round and position it analyzed
+          const previous = latestGame.current;
+
+          if (
+            previous &&
+            (previous.round_id !== data.round_id ||
+              previous.position_version !== data.position_version)
+          ) {
+            setCouncilAdvice(null);
+            setCouncilError("");
+          }
+
+          latestGame.current = data;
           setReceivedGameData(data);
+
+          // use server owned availability, including after reconnect/reset
+          const pending = Boolean(data.council_pending);
+
+          setCouncilRemaining(data.council_remaining ?? 1);
+          setCouncilPending(pending);
+          councilRequestInFlight.current = pending;
 
           // If not the current player, no move can be made
           if (
@@ -182,34 +325,96 @@ function App() {
             setCantPlay(true);
           }
           setScreen("game");
+          return;
+        }
+
+        // handle private council messages separately from game state
+        if (
+          data.type === "council_pending" ||
+          data.type === "council_result" ||
+          data.type === "council_error" ||
+          data.type === "council_status"
+        ) {
+          const game = latestGame.current;
+
+          // Ignore messages belonging to a different game or round
+          if (
+            !game ||
+            data.game_id !== game.game_id ||
+            data.round_id !== game.round_id
+          ) {
+            return;
+          }
+
+          // Never display a recommendation for an outdated board position
+          if (
+            data.type === "council_result" &&
+            data.position_version !== game.position_version
+          ) {
+            return;
+          }
+
+          const pending = Boolean(data.council_pending);
+
+          councilRequestInFlight.current = pending;
+          setCouncilPending(pending);
+          setCouncilRemaining(data.council_remaining);
+
+          if (data.type === "council_pending") {
+            setCouncilAdvice(null);
+            setCouncilError("");
+          } else if (data.type === "council_result") {
+            setCouncilAdvice(data);
+            setCouncilError("");
+          } else if (data.type === "council_error") {
+            setCouncilError(data.message);
+          }
         }
       };
 
       socket.onclose = () => {
+        if (disposed) return;
+
         setConnectionStatus("Disconnected");
+
+        // disconnected clients cant move or start council work
+        setCantPlay(true);
+        setCouncilPending(false);
+        councilRequestInFlight.current = false;
       };
+
       // Function saved for cleanup
       return () => {
+        disposed = true;
+
+        if (websocket.current == socket) {
+          websocket.current = null;
+        }
+
         socket.close();
       };
     }
   }, [gameId]);
-  
+
   // Create Game Button
   async function handleCreateGame() {
     setScreen("creating");
-    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(
+      /\/$/,
+      "",
+    );
     // Create game via API POST request
     try {
       const response = await fetch(baseUrl + "/games", {
         method: "POST",
       });
+
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
+
       const json = await response.json();
       setGameId(json["game_id"]);
-      setTimeout(() => setScreen("game"), 500);
     } catch (error) {
       console.error("Fetch Error: ", error);
       setTimeout(() => setScreen("welcome"), 500);
@@ -223,6 +428,7 @@ function App() {
       setGameId(text);
     }
   }
+
   function handleResetGame() {
     const socket = websocket.current;
 
@@ -233,7 +439,44 @@ function App() {
     socket.send(JSON.stringify({ type: "reset" }));
   }
 
+  // request advice only using message type
+  // the server obtains the board and player identity from its own game state
+  function handleCouncilRequest() {
+    const socket = websocket.current;
+    const game = latestGame.current;
+
+    if (
+      !socket ||
+      socket.readyState !== WebSocket.OPEN ||
+      !game ||
+      councilRequestInFlight.current ||
+      councilRemaining !== 1 ||
+      game.status !== "active" ||
+      game.players_connected !== 2 ||
+      game.current_player !== game.assigned_player
+    ) {
+      return;
+    }
+
+    // block duplicate clicks while waiting for server confirmation
+    councilRequestInFlight.current = true;
+    setCouncilPending(true);
+    setCouncilAdvice(null);
+    setCouncilError("");
+
+    try {
+      socket.send(JSON.stringify({ type: "council_request" }));
+    } catch {
+      councilRequestInFlight.current = false;
+      setCouncilPending(false);
+      setCouncilError("Could not send the council request.");
+    }
+  }
+
   function columnClickHandler(columnIndex) {
+    // avoid changing position while the client waits for advice
+    if (councilRequestInFlight.current) return;
+
     if (websocket.current?.readyState === WebSocket.OPEN) {
       const move = {
         type: "move",
@@ -386,11 +629,11 @@ function App() {
 
               <span className="sample-label">Sample position</span>
             </div>
-
+            {/*pause local board clicks while advice is being generated */}
             <Board
               board={receivedGameData["board"]}
               onColumnClick={columnClickHandler}
-              cantClick={cantPlay}
+              cantClick={cantPlay || councilPending}
               lastMove={receivedGameData?.last_move ?? null}
               resultMessage={message}
             />
@@ -453,6 +696,16 @@ function App() {
                 </div>
               </div>
             </section>
+            {/*private recommendation and one-use-per-round availability. */}
+            <CouncilPanel
+              game={receivedGameData}
+              connected={connectionStatus === "Connected"}
+              pending={councilPending}
+              remaining={councilRemaining}
+              advice={councilAdvice}
+              error={councilError}
+              onRequest={handleCouncilRequest}
+            />
 
             <button
               className="join-game-button"
